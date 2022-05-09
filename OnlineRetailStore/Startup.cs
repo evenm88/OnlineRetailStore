@@ -6,6 +6,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using OnlineRetailStoreApi.DbSettings;
+using OnlineRetailStoreApi.Repository;
+using OnlineRetailStoreApi.Repository.Interfaces;
 using OnlineRetailStoreApi.Services;
 using OnlineRetailStoreApi.Services.Interfaces;
 
@@ -27,6 +29,8 @@ namespace OnlineRetailStore
                 Configuration.GetSection(nameof(OnlineRetailDatabaseSettings)));
             services.AddSingleton<IOnlineRetailDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<OnlineRetailDatabaseSettings>>().Value);
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IOrderService, OrderService>();
 

@@ -1,31 +1,27 @@
-﻿using MongoDB.Driver;
-using OnlineRetailStoreApi.Models;
-using OnlineRetailStoreApi.DbSettings;
+﻿using OnlineRetailStoreApi.Models;
 using OnlineRetailStoreApi.Services.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using OnlineRetailStoreApi.Repository.Interfaces;
 
 namespace OnlineRetailStoreApi.Services
 {
     public class OrderService : IOrderService
     {
-        private readonly IMongoCollection<Order> _orders;
-        private readonly IProductService productServices;
+        private readonly IProductService _productServices;
+        private readonly IOrderRepository _orderRepository;
 
-        public OrderService(IServiceProvider serviceProvider, IOnlineRetailDatabaseSettings settings)
+        public OrderService(IServiceProvider serviceProvider, IOrderRepository orderRepository)
         {
-            var client = new MongoClient(settings.ConnectionString);
-            var database = client.GetDatabase(settings.DatabaseName);
-            _orders = database.GetCollection<Order>(settings.OrderCollectionName);
-            productServices = serviceProvider.GetRequiredService<IProductService>();
+            _productServices = serviceProvider.GetRequiredService<IProductService>();
+            _orderRepository = orderRepository;
         }
         public void AddOrder(Order order)
         {
             try
             {
-                var product = productServices.GetProduct(order.ProductId);
+                var product = _productServices.GetProduct(order.ProductId);
 
                 if (product == null)
                 {
@@ -38,9 +34,9 @@ namespace OnlineRetailStoreApi.Services
                 else
                 {
                     order.BillAmount = order.Quantity * product.ProductPrice;
-                    _orders.InsertOne(order);
+                    _orderRepository.AddOrder(order);
                     var remainingQuantity = product.AvailableQuantity - order.Quantity;
-                    productServices.UpdateQuantity(order.ProductId, remainingQuantity);
+                    _productServices.UpdateQuantity(order.ProductId, remainingQuantity);
                 }
             }
             catch
@@ -61,10 +57,10 @@ namespace OnlineRetailStoreApi.Services
                 }
                 else
                 {
-                    var product = productServices.GetProduct(order.ProductId);
-                    _orders.DeleteOne(order => order.OrderId == orderId);
+                    var product = _productServices.GetProduct(order.ProductId);
+                    _orderRepository.DeleteOrder(orderId);
                     var remainingQuantity = product.AvailableQuantity + order.Quantity;
-                    productServices.UpdateQuantity(product.ProductId, remainingQuantity);
+                    _productServices.UpdateQuantity(product.ProductId, remainingQuantity);
 
                 }
             }
@@ -75,15 +71,14 @@ namespace OnlineRetailStoreApi.Services
 
         }
 
-
         public Order GetOrder(string orderId)
         {
-            return _orders.Find<Order>(order => order.OrderId == orderId).FirstOrDefault();
+            return _orderRepository.GetOrder(orderId);
         }
 
         public List<Order> GetOrderList()
         {
-            return _orders.Find(order => true).ToList();
+            return _orderRepository.GetAllOrders();
         }
     }
 }

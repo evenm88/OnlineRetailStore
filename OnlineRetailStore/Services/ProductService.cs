@@ -1,47 +1,42 @@
-﻿using MongoDB.Driver;
-using OnlineRetailStoreApi.Models;
-using OnlineRetailStoreApi.DbSettings;
+﻿using OnlineRetailStoreApi.Models;
 using OnlineRetailStoreApi.Services.Interfaces;
 using System.Collections.Generic;
-using System.Linq;
+using OnlineRetailStoreApi.Repository.Interfaces;
 
 namespace OnlineRetailStoreApi.Services
 {
     public class ProductService : IProductService
     {
 
-        private readonly IMongoCollection<Product> _products;
-        public ProductService(IOnlineRetailDatabaseSettings settings)
+        private readonly IProductRepository _productRepository;
+
+        public ProductService(IProductRepository productRepository)
         {
-            var client = new MongoClient(settings.ConnectionString);
-            var database = client.GetDatabase(settings.DatabaseName);
-            _products = database.GetCollection<Product>(settings.ProductCollectionName);
+            _productRepository = productRepository;
         }
+
         public void AddProduct(Product product)
         {
-            _products.InsertOne(product);
+            _productRepository.AddProduct(product);
         }
 
         public void DeleteProduct(string productId)
         {
-            _products.DeleteOne(product => product.ProductId == productId);
+            _productRepository.DeleteProduct(productId);
         }
-       
-
         public Product GetProduct(string productId)
         {
-            return _products.Find<Product>(product => product.ProductId == productId).FirstOrDefault();
+            return _productRepository.GetProduct(productId);
         }
 
         public List<Product> GetProductList()
         {
-            return _products.Find(product => true).ToList();
+            return _productRepository.GetAllProducts();
         }
+
         public void UpdateQuantity(string productId, int quantity)
         {
-            var product = _products.Find<Product>(product => product.ProductId == productId).FirstOrDefault();
-            product.AvailableQuantity = quantity;
-            _products.ReplaceOne(product => product.ProductId == productId, product);
+            _productRepository.UpdateProductQuantity(productId, quantity);
         }
     }
 }

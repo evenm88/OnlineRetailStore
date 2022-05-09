@@ -17,6 +17,13 @@ namespace OnlineRetailStoreApi.Services
             _productServices = serviceProvider.GetRequiredService<IProductService>();
             _orderRepository = orderRepository;
         }
+
+        public OrderService(IOrderRepository orderRepository, IProductService productService)
+        {
+            _productServices = productService;
+            _orderRepository = orderRepository;
+        }
+
         public void AddOrder(Order order)
         {
             try
